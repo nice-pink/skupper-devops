@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	PrometheusUrl string       = "http://localhost:9090" //"http://prometheus.ops"
+	PrometheusUrl string       = "http://localhost:9090"
 	QueryPath     string       = "/api/v1/query?query="
 	UptimeQuery   string       = "probe_success"
 	HttpClient    *http.Client = &http.Client{Timeout: 10 * time.Second}
