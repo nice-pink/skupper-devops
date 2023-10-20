@@ -6,6 +6,7 @@ spec:
   ttlSecondsAfterFinished: 600
   template:
     spec:
+      serviceAccount: skupper-sitesync
       containers:
       - name: skupper-sitesync
         image: nicepink/skupper-sitesync:latest

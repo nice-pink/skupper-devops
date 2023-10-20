@@ -19,6 +19,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/nice-pink/skupper-devops/pkg/logger"
 )
 
 // variables
@@ -26,6 +28,7 @@ import (
 var (
 	KubeConfigPath string = "/home/vscode/go/src/github.com/nice-pink/skupper-devops/.kube/config"
 	IsInCluster    bool   = false
+	Verbose        bool   = false
 )
 
 func getClientSet() (*kubernetes.Clientset, error) {
@@ -79,19 +82,21 @@ func GetDeployment(name string, namespace string) error {
 	// get deployment
 	_, err = clientset.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
-		fmt.Printf("Deployment %s in namespace %s not found\n", name, namespace)
+		logger.Error("Deployment %s in namespace %s not found\n", name, namespace)
 		return err
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		fmt.Printf("Error getting Deployment %s in namespace %s: %v\n",
+		logger.Error("Error getting Deployment %s in namespace %s: %v\n",
 			name, namespace, statusError.ErrStatus.Message)
 		return err
 	} else if err != nil {
-		fmt.Printf("Error getting Deployment %s in namespace %s: %v\n",
+		logger.Error("Error getting Deployment %s in namespace %s: %v\n",
 			name, namespace, statusError.ErrStatus.Message)
 		return err
 	}
 
-	fmt.Printf("Found Deployment %s in namespace %s\n", name, namespace)
+	if Verbose {
+		logger.Log("Found Deployment %s in namespace %s\n", name, namespace)
+	}
 	return nil
 }
 
@@ -139,7 +144,7 @@ func ListPods(namespace string) {
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Printf("There are %d pods in the namespace %s\n", len(pods.Items), namespace)
+	logger.Log("There are %d pods in the namespace %s\n", len(pods.Items), namespace)
 	for _, pod := range pods.Items {
 		fmt.Println("- " + pod.Name)
 	}
@@ -155,14 +160,16 @@ func GetPod(name string, namespace string) {
 	// get pod
 	_, err = clientset.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
-		fmt.Printf("Pod %s in namespace %s not found\n", name, namespace)
+		logger.Error("Pod %s in namespace %s not found\n", name, namespace)
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		fmt.Printf("Error getting pod %s in namespace %s: %v\n",
+		logger.Error("Error getting pod %s in namespace %s: %v\n",
 			name, namespace, statusError.ErrStatus.Message)
 	} else if err != nil {
 		panic(err.Error())
 	} else {
-		fmt.Printf("Found pod %s in namespace %s\n", name, namespace)
+		if Verbose {
+			logger.Log("Found pod %s in namespace %s\n", name, namespace)
+		}
 	}
 }
 
@@ -181,7 +188,7 @@ func ListSecrets(namespace string) {
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Printf("There are %d secrets in the namespace %s\n", len(secrets.Items), namespace)
+	logger.Log("There are %d secrets in the namespace %s\n", len(secrets.Items), namespace)
 	for _, secret := range secrets.Items {
 		fmt.Println("- " + secret.Name)
 	}
@@ -197,14 +204,16 @@ func GetSecret(name string, namespace string, print bool) *v1.Secret {
 	// get secret
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
-		fmt.Printf("Secret %s in namespace %s not found\n", name, namespace)
+		logger.Error("Secret %s in namespace %s not found\n", name, namespace)
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		fmt.Printf("Error getting secret %s in namespace %s: %v\n",
+		logger.Error("Error getting secret %s in namespace %s: %v\n",
 			name, namespace, statusError.ErrStatus.Message)
 	} else if err != nil {
 		panic(err.Error())
 	} else {
-		fmt.Printf("Found secret %s in namespace %s\n", name, namespace)
+		if Verbose {
+			logger.Log("Found secret %s in namespace %s\n", name, namespace)
+		}
 	}
 
 	if print {
@@ -237,7 +246,7 @@ func CreateSecret(namespace string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Created secret %q.\n", resource.GetName())
+	logger.Log("Created secret %q.\n", resource.GetName())
 
 	return nil
 }
@@ -263,14 +272,16 @@ func GetConfigMap(name string, namespace string, print bool) *v1.ConfigMap {
 	// get configMap
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
-		fmt.Printf("ConfigMap %s in namespace %s not found\n", name, namespace)
+		logger.Error("ConfigMap %s in namespace %s not found\n", name, namespace)
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		fmt.Printf("Error getting ConfigMap %s in namespace %s: %v\n",
+		logger.Error("Error getting ConfigMap %s in namespace %s: %v\n",
 			name, namespace, statusError.ErrStatus.Message)
 	} else if err != nil {
 		panic(err.Error())
 	} else {
-		fmt.Printf("Found ConfigMap %s in namespace %s\n", name, namespace)
+		if Verbose {
+			logger.Log("Found ConfigMap %s in namespace %s\n", name, namespace)
+		}
 	}
 
 	if print {
@@ -338,7 +349,7 @@ func DeleteResource(name string, namespace string, resourceType string, version 
 	}
 
 	// delete
-	fmt.Println("Deleting deployment...")
+	logger.Log("Deleting deployment...")
 	resource := schema.GroupVersionResource{Group: group, Version: version, Resource: resourceType}
 	deletePolicy := metav1.DeletePropagationForeground
 	deleteOptions := metav1.DeleteOptions{
@@ -347,7 +358,7 @@ func DeleteResource(name string, namespace string, resourceType string, version 
 	if err := client.Resource(resource).Namespace(namespace).Delete(context.TODO(), name, deleteOptions); err != nil {
 		return err
 	}
-	fmt.Println("Deleted secret.")
+	logger.Log("Deleted secret.")
 
 	return nil
 }
