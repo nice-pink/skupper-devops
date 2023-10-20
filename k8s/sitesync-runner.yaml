@@ -1,10 +1,15 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: skupper-sitesync
 spec:
-  ttlSecondsAfterFinished: 600
+  selector:
+    matchLabels:
+      app: skupper-sitesync
   template:
+    metadata:
+      labels:
+        app: skupper-sitesync
     spec:
       serviceAccount: skupper-sitesync
       containers:
@@ -17,5 +22,9 @@ spec:
         - ops
         - -isInCluster
         - 'true'
-        - -initDelete
-      restartPolicy: Never
+        - loopDelay 20
+        - loop
+        resources:
+          limits:
+            memory: 64Mi
+            cpu: 10m
