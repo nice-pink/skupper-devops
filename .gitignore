@@ -1,2 +1,5 @@
 # executables
 bin/
+
+# environment variables
+.env

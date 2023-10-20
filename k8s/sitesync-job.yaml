@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: skupper-sitesync
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      containers:
+      - name: skupper-sitesync
+        image: nicepink/skupper-sitesync:latest
+        args:
+        - -configName
+        - skupper-site
+        - -configNamespace
+        - ops
+        - -isInCluster
+        - 'true'
+      restartPolicy: Never
