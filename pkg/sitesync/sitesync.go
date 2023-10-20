@@ -2,6 +2,7 @@ package sitesync
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nice-pink/skupper-devops/pkg/kynetes"
@@ -35,6 +36,14 @@ func Setup(name string, namespace string, isInCluster bool, kubeConfigPath strin
 	kynetes.IsInCluster = isInCluster
 	if kubeConfigPath != "" {
 		kynetes.KubeConfigPath = kubeConfigPath
+	}
+
+	if !isInCluster {
+		// check if kube config exists
+		if _, err := os.Stat(kynetes.KubeConfigPath); err != nil {
+			fmt.Println("Kube config file does not exist.")
+			panic(err)
+		}
 	}
 
 	// skupper config

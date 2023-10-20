@@ -1,7 +1,11 @@
 #!/bin/bash
 
-mkdir -p bin/ && cd bin/
+mkdir -p bin/
+rm -rf bin/*
+cd bin/
 
-go build ../cmd/sitesync/ ../cmd/deploy/ ../cmd/kubernetes
+go build ../cmd/sitesync/
+go build ../cmd/deploy/
+go build ../cmd/kubernetes
 
 cd ..
