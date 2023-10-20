@@ -58,10 +58,23 @@ func getClientSet() (*kubernetes.Clientset, error) {
 }
 
 func getClientSetDynamic() (*dynamic.DynamicClient, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", KubeConfigPath)
-	if err != nil {
-		return nil, err
+	var config *rest.Config
+	var err error
+
+	if IsInCluster {
+		// get config from cluster
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			panic(err.Error())
+		}
+	} else {
+		// get config from file
+		config, err = clientcmd.BuildConfigFromFlags("", KubeConfigPath)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	// create the clientset
 	clientset, err := dynamic.NewForConfig(config)
 	if err != nil {
@@ -356,6 +369,7 @@ func DeleteResource(name string, namespace string, resourceType string, version 
 		PropagationPolicy: &deletePolicy,
 	}
 	if err := client.Resource(resource).Namespace(namespace).Delete(context.TODO(), name, deleteOptions); err != nil {
+		logger.Log(err)
 		return err
 	}
 	logger.Log("Deleted secret.")
