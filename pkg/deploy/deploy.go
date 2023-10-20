@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	skupperSecret string = "skupper-secret-default"
+	SKUPPER_SECRET string = "skupper-secret-default"
 )
 
 // prepare
@@ -76,7 +76,7 @@ func SendTokenRequest(namespace string) error {
 
 func TokenHasData(namespace string, retries int) bool {
 	for index := 1; index <= retries; index++ {
-		if kynetes.SecretHasData(skupperSecret, namespace) {
+		if kynetes.SecretHasData(SKUPPER_SECRET, namespace) {
 			return true
 		} else {
 			fmt.Print("Is empty...")

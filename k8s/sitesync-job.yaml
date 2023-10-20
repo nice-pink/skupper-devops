@@ -16,6 +16,5 @@ spec:
         - -configNamespace
         - ops
         - -isInCluster
-        - 'true'
         - -initDelete
       restartPolicy: Never

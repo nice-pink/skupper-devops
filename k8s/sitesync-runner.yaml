@@ -20,10 +20,10 @@ spec:
         - skupper-site
         - -configNamespace
         - ops
+        - -loopDelay
+        - '20'
         - -isInCluster
-        - 'true'
-        - loopDelay 20
-        - loop
+        - -loop
         resources:
           limits:
             memory: 64Mi
