@@ -7,5 +7,5 @@ mkdir -p bin/
 
 # build module and output to $REPO/bin/
 echo "Build $module..."
-cd $module
-go build -o ../bin/
+cd cmd/$module
+go build -o ../../bin/

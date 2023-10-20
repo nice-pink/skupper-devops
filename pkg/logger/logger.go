@@ -6,12 +6,13 @@ import (
 )
 
 func Log(a ...interface{}) {
-	log := append([]interface{}{time.Now().Format(time.RFC850)}, a...)
+	prefix := time.Now().Format(time.DateTime) + "::"
+	log := append([]interface{}{prefix}, a...)
 	fmt.Println(log...)
 }
 
 func Error(a ...interface{}) {
-	prefix := time.Now().Format(time.RFC850) + ":: ERROR:"
+	prefix := time.Now().Format(time.DateTime) + ":: ERROR:"
 	log := append([]interface{}{prefix}, a...)
 	fmt.Println(log...)
 }
