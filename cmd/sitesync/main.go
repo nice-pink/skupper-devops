@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/nice-pink/skupper-devops/pkg/sitesync"
 )
@@ -20,5 +21,11 @@ func main() {
 	fmt.Println("name:", *configName)
 	fmt.Println("namespace:", *configNamespace)
 
+	if *configName == "" || *configNamespace == "" {
+		flag.Usage()
+		os.Exit(2)
+	}
+
 	sitesync.Setup(*configName, *configNamespace, *isInCluster, *kubeConfig)
+	sitesync.Run()
 }
