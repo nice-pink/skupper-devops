@@ -39,7 +39,7 @@ func getJson(url string, target interface{}) error {
 func getSimpleMetrics(metrics []Metric) []MetricSimple {
 	var metricsSimple []MetricSimple
 
-	pattern := `(http://)([a-zA-Z_-]*)(.*)`
+	pattern := `(http://)([a-zA-Z_-]*-skupper)(.*)`
 	for _, metric := range metrics {
 		regex := regexp.MustCompile(pattern)
 		value := regex.ReplaceAllString(metric.Info.Instance, "${2}")
