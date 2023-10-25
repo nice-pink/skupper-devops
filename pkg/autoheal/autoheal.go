@@ -98,7 +98,7 @@ func increaseRestart(instance string) {
 }
 
 func WatchServiceUptimes(allowRestart bool) {
-	url := PrometheusUrl + metric.QueryPath + metric.UptimeMetricName
+	^ := PrometheusUrl + metric.QueryPath + metric.UptimeMetricName
 	response := new(metric.Response)
 	getJson(url, response)
 

@@ -16,6 +16,7 @@ func main() {
 	restart := flag.Bool("restart", false, "Allow restarting servic if offline.")
 	serviceRestarts := flag.Int("serviceRestarts", 10, "Max restart tries. Before giving up.")
 	publishMetrics := flag.Bool("publishMetrics", false, "Publish metrics about auto-healing.")
+	prometheusUrl := flag.String("prometheusUrl", "", "Prometheus url.")
 	flag.Parse()
 
 	// fmt.Println("--------")
@@ -26,6 +27,7 @@ func main() {
 
 	autoheal.MaxServiceRestarts = *serviceRestarts
 	autoheal.PublishMetrics = *publishMetrics
+	autoheal.PrometheusUrl = *prometheusUrl
 	autoheal.Setup(*kubeConfig, *isInCluster)
 
 	// prepare
