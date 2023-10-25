@@ -6,7 +6,7 @@ cd bin/
 
 go build ../cmd/sitesync/
 go build ../cmd/deploy/
-go build ../cmd/kubernetes
-go build ../cmd/uptime
+go build ../cmd/kubernetes/
+go build ../cmd/autoheal/
 
 cd ..

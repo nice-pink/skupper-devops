@@ -93,15 +93,19 @@ func GetDeployment(name string, namespace string) error {
 	}
 
 	// get deployment
-	_, err = clientset.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	_, err = clientset.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		logger.Error("Deployment %s in namespace %s not found\n", name, namespace)
 		return err
-	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
+	}
+
+	statusError, isStatus := err.(*errors.StatusError)
+	if isStatus {
 		logger.Error("Error getting Deployment %s in namespace %s: %v\n",
 			name, namespace, statusError.ErrStatus.Message)
 		return err
-	} else if err != nil {
+	}
+	if err != nil {
 		logger.Error("Error getting Deployment %s in namespace %s: %v\n",
 			name, namespace, statusError.ErrStatus.Message)
 		return err
@@ -163,27 +167,36 @@ func ListPods(namespace string) {
 	}
 }
 
-func GetPod(name string, namespace string) {
+func GetPod(name string, namespace string) error {
 	// client set
 	clientset, err := getClientSet()
 	if err != nil {
 		panic(err)
 	}
 
-	// get pod
+	// get deployment
 	_, err = clientset.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		logger.Error("Pod %s in namespace %s not found\n", name, namespace)
-	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		logger.Error("Error getting pod %s in namespace %s: %v\n",
-			name, namespace, statusError.ErrStatus.Message)
-	} else if err != nil {
-		panic(err.Error())
-	} else {
-		if Verbose {
-			logger.Log("Found pod %s in namespace %s\n", name, namespace)
-		}
+		return err
 	}
+
+	statusError, isStatus := err.(*errors.StatusError)
+	if isStatus {
+		logger.Error("Error getting Pod %s in namespace %s: %v\n",
+			name, namespace, statusError.ErrStatus.Message)
+		return err
+	}
+	if err != nil {
+		logger.Error("Error getting Pod %s in namespace %s: %v\n",
+			name, namespace, statusError.ErrStatus.Message)
+		return err
+	}
+
+	if Verbose {
+		logger.Log("Found Pod %s in namespace %s\n", name, namespace)
+	}
+	return nil
 }
 
 // secret

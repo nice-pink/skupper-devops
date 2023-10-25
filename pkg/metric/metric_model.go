@@ -1,4 +1,9 @@
-package uptime
+package metric
+
+const (
+	QueryPath        string = "/api/v1/query?query="
+	UptimeMetricName string = "probe_success"
+)
 
 // prometheus metrics
 

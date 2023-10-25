@@ -1,4 +1,4 @@
-package uptime
+package autoheal
 
 import (
 	"encoding/json"
@@ -8,19 +8,16 @@ import (
 
 	"github.com/nice-pink/skupper-devops/pkg/kynetes"
 	"github.com/nice-pink/skupper-devops/pkg/logger"
-)
-
-const (
-	SERVICE_RESTARTS int = 4
+	"github.com/nice-pink/skupper-devops/pkg/metric"
 )
 
 var (
-	KubeConfigPath string       = ".kube/config"
-	PrometheusUrl  string       = "http://localhost:9090"
-	QueryPath      string       = "/api/v1/query?query="
-	UptimeQuery    string       = "probe_success"
-	HttpClient     *http.Client = &http.Client{Timeout: 10 * time.Second}
-	Restarts                    = map[string]int{}
+	KubeConfigPath     string       = ".kube/config"
+	PrometheusUrl      string       = "http://localhost:9090"
+	HttpClient         *http.Client = &http.Client{Timeout: 10 * time.Second}
+	MaxServiceRestarts int          = 10
+	Restarts                        = map[string]int{}
+	PublishMetrics     bool         = false
 )
 
 type MetricSimple struct {
@@ -31,6 +28,13 @@ type MetricSimple struct {
 
 func Setup() {
 	kynetes.KubeConfigPath = KubeConfigPath
+
+	if PublishMetrics {
+		logger.Log("Publish metrics about auto-healing.")
+		go func() {
+			metric.Listen()
+		}()
+	}
 }
 
 func getJson(url string, target interface{}) error {
@@ -43,7 +47,7 @@ func getJson(url string, target interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(target)
 }
 
-func getSimpleMetrics(metrics []Metric) []MetricSimple {
+func getSimpleMetrics(metrics []metric.Metric) []MetricSimple {
 	var metricsSimple []MetricSimple
 
 	pattern := `(http://)([a-zA-Z_-]*-skupper).([a-zA-Z_-]*).(.*)`
@@ -63,10 +67,10 @@ func triggerAlert(instance string) {
 }
 
 func restartService(instance string, namespace string, restartCount int) bool {
-	if restartCount == SERVICE_RESTARTS {
+	if restartCount == MaxServiceRestarts {
 		triggerAlert(instance)
 		return false
-	} else if restartCount > SERVICE_RESTARTS {
+	} else if restartCount > MaxServiceRestarts {
 		logger.Error(instance, "Restarts exeeded! Waiting for manual action.")
 		return false
 	}
@@ -80,41 +84,40 @@ func restartService(instance string, namespace string, restartCount int) bool {
 	return true
 }
 
-func increaseRestart(instance string, namespace string) {
+func increaseRestart(instance string) {
 	val, exists := Restarts[instance]
 	if exists {
 		Restarts[instance] = val + 1
 	} else {
 		Restarts[instance] = 1
 	}
-	restartService(instance, namespace, Restarts[instance])
 }
 
-func WatchServiceUptimes() {
-	url := PrometheusUrl + QueryPath + UptimeQuery
-	response := new(Response)
+func WatchServiceUptimes(allowRestart bool) {
+	url := PrometheusUrl + metric.QueryPath + metric.UptimeMetricName
+	response := new(metric.Response)
 	getJson(url, response)
 
 	//logger.Log(response.Data.Result[1].Info.Instance, response.Data.Result[1].Value[1])
 	metricsSimple := getSimpleMetrics(response.Data.Result)
 	for _, metric := range metricsSimple {
 		if metric.Value == "0" {
+			// found offline service
 			logger.Error("Found service offline:", metric.Instance)
-			increaseRestart(metric.Instance, metric.Namespace)
+			increaseRestart(metric.Instance)
+
+			if PublishMetrics {
+				metricName := metric.Instance + "_" + metric.Namespace
+				incCounter(metricName)
+			}
+
+			// restart
+			if allowRestart {
+				restartService(metric.Instance, metric.Namespace, Restarts[metric.Instance])
+			}
 		} else {
+			// reset restarts if online
 			Restarts[metric.Instance] = 0
 		}
 	}
 }
-
-// func WatchServiceUptimes() {
-// 	resp, err := http.Get()
-// 	if err != nil {
-// 		logger.Error(err)
-// 		panic(err)
-// 	}
-
-// 	body, err := io.ReadAll(resp.Body)
-// 	stringBody := string(body[:])
-// 	logger.Log(stringBody)
-// }

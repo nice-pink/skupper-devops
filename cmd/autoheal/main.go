@@ -4,7 +4,7 @@ import (
 	"flag"
 	"time"
 
-	"github.com/nice-pink/skupper-devops/pkg/uptime"
+	"github.com/nice-pink/skupper-devops/pkg/autoheal"
 )
 
 func main() {
@@ -12,6 +12,9 @@ func main() {
 	loop := flag.Bool("loop", false, "Loop check.")
 	loopDelay := flag.Int("loopDelay", 10, "Loop check delay.")
 	kubeConfig := flag.String("kubeConfig", ".kube/config", "ube config path.")
+	restart := flag.Bool("restart", false, "Allow restarting servic if offline.")
+	serviceRestarts := flag.Int("serviceRestarts", 10, "Max restart tries. Before giving up.")
+	publishMetrics := flag.Bool("publishMetrics", false, "Publish metrics about auto-healing.")
 	flag.Parse()
 
 	// fmt.Println("--------")
@@ -20,12 +23,14 @@ func main() {
 	// fmt.Println("--------")
 	// fmt.Println("")
 
-	uptime.KubeConfigPath = *kubeConfig
-	uptime.Setup()
+	autoheal.KubeConfigPath = *kubeConfig
+	autoheal.MaxServiceRestarts = *serviceRestarts
+	autoheal.PublishMetrics = *publishMetrics
+	autoheal.Setup()
 
 	// prepare
 	for {
-		uptime.WatchServiceUptimes()
+		autoheal.WatchServiceUptimes(*restart)
 
 		if !*loop {
 			break
