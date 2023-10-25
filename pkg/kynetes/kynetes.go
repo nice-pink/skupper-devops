@@ -319,6 +319,12 @@ func ConfigMapGetResourceVersion(name string, namespace string) string {
 	return configMap.ResourceVersion
 }
 
+// service
+
+func DeleteService(name string, namespace string) error {
+	return DeleteResource(name, namespace, "services", "v1", "")
+}
+
 // resource
 
 func ReadResource(path string) ([]byte, error) {
@@ -362,7 +368,7 @@ func DeleteResource(name string, namespace string, resourceType string, version 
 	}
 
 	// delete
-	logger.Log("Deleting deployment...")
+	logger.Log("Deleting", resourceType, "with name", name, "in namespace", namespace)
 	resource := schema.GroupVersionResource{Group: group, Version: version, Resource: resourceType}
 	deletePolicy := metav1.DeletePropagationForeground
 	deleteOptions := metav1.DeleteOptions{
@@ -372,7 +378,7 @@ func DeleteResource(name string, namespace string, resourceType string, version 
 		logger.Log(err)
 		return err
 	}
-	logger.Log("Deleted secret.")
+	logger.Log("Deleted resource.")
 
 	return nil
 }

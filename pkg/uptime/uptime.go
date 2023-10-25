@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/nice-pink/skupper-devops/pkg/kynetes"
 	"github.com/nice-pink/skupper-devops/pkg/logger"
 )
 
@@ -14,16 +15,22 @@ const (
 )
 
 var (
-	PrometheusUrl string       = "http://localhost:9090"
-	QueryPath     string       = "/api/v1/query?query="
-	UptimeQuery   string       = "probe_success"
-	HttpClient    *http.Client = &http.Client{Timeout: 10 * time.Second}
-	Restarts                   = map[string]int{}
+	KubeConfigPath string       = ".kube/config"
+	PrometheusUrl  string       = "http://localhost:9090"
+	QueryPath      string       = "/api/v1/query?query="
+	UptimeQuery    string       = "probe_success"
+	HttpClient     *http.Client = &http.Client{Timeout: 10 * time.Second}
+	Restarts                    = map[string]int{}
 )
 
 type MetricSimple struct {
-	Instance string
-	Value    string
+	Instance  string
+	Namespace string
+	Value     string
+}
+
+func Setup() {
+	kynetes.KubeConfigPath = KubeConfigPath
 }
 
 func getJson(url string, target interface{}) error {
@@ -39,11 +46,12 @@ func getJson(url string, target interface{}) error {
 func getSimpleMetrics(metrics []Metric) []MetricSimple {
 	var metricsSimple []MetricSimple
 
-	pattern := `(http://)([a-zA-Z_-]*-skupper)(.*)`
+	pattern := `(http://)([a-zA-Z_-]*-skupper).([a-zA-Z_-]*).(.*)`
 	for _, metric := range metrics {
 		regex := regexp.MustCompile(pattern)
 		value := regex.ReplaceAllString(metric.Info.Instance, "${2}")
-		metricSimple := &MetricSimple{value, metric.Value[1].(string)}
+		namespace := regex.ReplaceAllString(metric.Info.Instance, "${3}")
+		metricSimple := &MetricSimple{value, namespace, metric.Value[1].(string)}
 		metricsSimple = append(metricsSimple, *metricSimple)
 	}
 
@@ -54,7 +62,7 @@ func triggerAlert(instance string) {
 	logger.Error("Alert for", instance)
 }
 
-func restartService(instance string, restartCount int) bool {
+func restartService(instance string, namespace string, restartCount int) bool {
 	if restartCount == SERVICE_RESTARTS {
 		triggerAlert(instance)
 		return false
@@ -63,18 +71,23 @@ func restartService(instance string, restartCount int) bool {
 		return false
 	}
 
-	logger.Log("Restart", instance)
+	logger.Log("Restart", instance, "-", namespace)
+	err := kynetes.DeleteService(instance, namespace)
+	if err != nil {
+		panic(err)
+	}
+
 	return true
 }
 
-func increaseRestart(instance string) {
+func increaseRestart(instance string, namespace string) {
 	val, exists := Restarts[instance]
 	if exists {
 		Restarts[instance] = val + 1
 	} else {
 		Restarts[instance] = 1
 	}
-	restartService(instance, Restarts[instance])
+	restartService(instance, namespace, Restarts[instance])
 }
 
 func WatchServiceUptimes() {
@@ -87,7 +100,7 @@ func WatchServiceUptimes() {
 	for _, metric := range metricsSimple {
 		if metric.Value == "0" {
 			logger.Error("Found service offline:", metric.Instance)
-			increaseRestart(metric.Instance)
+			increaseRestart(metric.Instance, metric.Namespace)
 		} else {
 			Restarts[metric.Instance] = 0
 		}

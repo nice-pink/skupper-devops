@@ -11,6 +11,7 @@ func main() {
 	// flags
 	loop := flag.Bool("loop", false, "Loop check.")
 	loopDelay := flag.Int("loopDelay", 10, "Loop check delay.")
+	kubeConfig := flag.String("kubeConfig", ".kube/config", "ube config path.")
 	flag.Parse()
 
 	// fmt.Println("--------")
@@ -18,6 +19,9 @@ func main() {
 	// fmt.Println("DEST: " + *dest)
 	// fmt.Println("--------")
 	// fmt.Println("")
+
+	uptime.KubeConfigPath = *kubeConfig
+	uptime.Setup()
 
 	// prepare
 	for {
