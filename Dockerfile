@@ -20,7 +20,7 @@ RUN ./build_all
 ####################################################################################################
 
 # FROM cgr.dev/chainguard/go:latest AS sitesync-runner
-FROM golang:1.21.3-bullseye AS sitesync-runner
+FROM golang:1.21.3-bullseye AS sitesync
 
 WORKDIR /app
 
@@ -30,22 +30,20 @@ ENTRYPOINT [ "/app/sitesync" ]
 
 ####################################################################################################
 
-# FROM cgr.dev/chainguard/go:latest AS sitesync-runner
-FROM golang:1.21.3-bullseye AS service-autoheal
+FROM golang:1.21.3-bullseye AS autoheal
 
 WORKDIR /app
 
 COPY --from=builder /app/bin/autoheal .
 
-ENTRYPOINT [ "/app/sitesync" ]
+ENTRYPOINT [ "/app/autoheal" ]
 
 ####################################################################################################
 
-# FROM cgr.dev/chainguard/go:latest AS sitesync-runner
 FROM golang:1.21.3-bullseye AS deploy
 
 WORKDIR /app
 
-COPY --from=builder /app/bin/sitesync .
+COPY --from=builder /app/bin/deploy .
 
-ENTRYPOINT [ "/app/sitesync" ]
+ENTRYPOINT [ "/app/deploy" ]
