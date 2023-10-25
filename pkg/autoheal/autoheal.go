@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	KubeConfigPath     string       = ".kube/config"
 	PrometheusUrl      string       = "http://localhost:9090"
 	HttpClient         *http.Client = &http.Client{Timeout: 10 * time.Second}
 	MaxServiceRestarts int          = 10
@@ -26,9 +25,14 @@ type MetricSimple struct {
 	Value     string
 }
 
-func Setup() {
-	kynetes.KubeConfigPath = KubeConfigPath
+func Setup(kubeConfigPath string, isInCluster bool) {
+	// setup kynetes
+	kynetes.IsInCluster = isInCluster
+	if kubeConfigPath != "" {
+		kynetes.KubeConfigPath = kubeConfigPath
+	}
 
+	// setup metrics publisher
 	if PublishMetrics {
 		logger.Log("Publish metrics about auto-healing.")
 		go func() {
