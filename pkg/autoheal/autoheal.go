@@ -45,7 +45,7 @@ func getJson(url string, target interface{}) error {
 	resp, err := HttpClient.Get(url)
 	if err != nil {
 		logger.Error(err)
-		panic(err)
+		return err
 	}
 
 	return json.NewDecoder(resp.Body).Decode(target)
@@ -63,16 +63,19 @@ func getSimpleMetrics(metrics []metric.Metric) []MetricSimple {
 		metricsSimple = append(metricsSimple, *metricSimple)
 	}
 
+	servicesGauge.Set(float64(len(metricsSimple)))
+
 	return metricsSimple
 }
 
-func triggerAlert(instance string) {
+func triggerAlert(instance string, namespace string) {
 	logger.Error("Alert for", instance)
+	incAlertsCounter(instance, namespace)
 }
 
 func restartService(instance string, namespace string, restartCount int) bool {
 	if restartCount == MaxServiceRestarts {
-		triggerAlert(instance)
+		triggerAlert(instance, namespace)
 		return false
 	} else if restartCount > MaxServiceRestarts {
 		logger.Error(instance, "Restarts exeeded! Waiting for manual action.")
@@ -82,7 +85,9 @@ func restartService(instance string, namespace string, restartCount int) bool {
 	logger.Log("Restart", instance, "-", namespace)
 	err := kynetes.DeleteService(instance, namespace)
 	if err != nil {
-		panic(err)
+		logger.Log(err)
+		incServiceMissingCounter(instance, namespace)
+		return false
 	}
 
 	return true
@@ -98,22 +103,27 @@ func increaseRestart(instance string) {
 }
 
 func WatchServiceUptimes(allowRestart bool) {
+	// increment general counter
+	checksCounter.Inc()
+
+	// get prometheus metrics
 	url := PrometheusUrl + metric.QueryPath + metric.UptimeMetricName
 	response := new(metric.Response)
-	getJson(url, response)
+	err := getJson(url, response)
+	if err != nil {
+		return
+	}
 
 	//logger.Log(response.Data.Result[1].Info.Instance, response.Data.Result[1].Value[1])
 	metricsSimple := getSimpleMetrics(response.Data.Result)
+
 	for _, metric := range metricsSimple {
 		if metric.Value == "0" {
 			// found offline service
 			logger.Error("Found service offline:", metric.Instance)
 			increaseRestart(metric.Instance)
 
-			if PublishMetrics {
-				metricName := metric.Instance + "_" + metric.Namespace
-				incCounter(metricName)
-			}
+			incAutohealCounter(metric.Instance, metric.Namespace)
 
 			// restart
 			if allowRestart {
