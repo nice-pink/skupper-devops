@@ -37,7 +37,7 @@ func incAutohealCounter(instance string, namespace string) {
 	counter := promauto.NewCounter(prometheus.CounterOpts{
 		Name:        "skupper_service_auto_heal",
 		Help:        "Skupper service was auto-healed.",
-		ConstLabels: prometheus.Labels{"instance": identifier},
+		ConstLabels: prometheus.Labels{"service": identifier},
 	})
 	counter.Inc()
 
@@ -59,7 +59,7 @@ func incServiceMissingCounter(instance string, namespace string) {
 	counter := promauto.NewCounter(prometheus.CounterOpts{
 		Name:        "skupper_service_missing",
 		Help:        "Skupper service is missing.",
-		ConstLabels: prometheus.Labels{"instance": identifier},
+		ConstLabels: prometheus.Labels{"service": identifier},
 	})
 	counter.Inc()
 
@@ -81,7 +81,7 @@ func incAlertsCounter(instance string, namespace string) {
 	counter := promauto.NewCounter(prometheus.CounterOpts{
 		Name:        "skupper_service_alerts",
 		Help:        "Alert triggered.",
-		ConstLabels: prometheus.Labels{"instance": identifier},
+		ConstLabels: prometheus.Labels{"service": identifier},
 	})
 	counter.Inc()
 
