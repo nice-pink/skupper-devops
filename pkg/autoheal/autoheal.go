@@ -25,7 +25,7 @@ type MetricSimple struct {
 	Value     string
 }
 
-func Setup(kubeConfigPath string, isInCluster bool) {
+func Setup(kubeConfigPath string, isInCluster bool, metricsScrapePort int) {
 	// setup kynetes
 	kynetes.IsInCluster = isInCluster
 	if kubeConfigPath != "" {
@@ -36,7 +36,7 @@ func Setup(kubeConfigPath string, isInCluster bool) {
 	if PublishMetrics {
 		logger.Log("Publish metrics about auto-healing.")
 		go func() {
-			metric.Listen()
+			metric.Listen(metricsScrapePort)
 		}()
 	}
 }

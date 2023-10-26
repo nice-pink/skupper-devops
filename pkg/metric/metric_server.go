@@ -2,11 +2,13 @@ package metric
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func Listen() {
+func Listen(port int) {
 	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(":2112", nil)
+	portString := ":" + strconv.Itoa(port)
+	http.ListenAndServe(portString, nil)
 }
