@@ -3,3 +3,6 @@ bin/
 
 # environment variables
 .env
+
+# build push
+docker-build-push
