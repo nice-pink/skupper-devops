@@ -15,6 +15,7 @@ var (
 	PrometheusUrl      string       = "http://localhost:9090"
 	HttpClient         *http.Client = &http.Client{Timeout: 10 * time.Second}
 	MaxServiceRestarts int          = 10
+	ServiceReset       int          = 30
 	Restarts                        = map[string]int{}
 	PublishMetrics     bool         = false
 )
@@ -78,6 +79,11 @@ func restartService(instance string, namespace string, restartCount int) bool {
 		triggerAlert(instance, namespace)
 		return false
 	} else if restartCount > MaxServiceRestarts {
+		if restartCount > ServiceReset {
+			logger.Error(instance, "Reset restart counter.")
+			restartCount = 0
+			return false
+		}
 		logger.Error(instance, "Restarts exeeded! Waiting for manual action.")
 		return false
 	}
