@@ -2,7 +2,7 @@
 FROM golang:1.21.3-bullseye as builder
 
 LABEL org.opencontainers.image.authors="raffael@nice.pink"
-LABEL org.opencontainers.image.source="https://github.com/radiosphere/rs-ops/blob/5243f8d4d53809f90fdc83d47a9dc71611743c77/resources/services/Dockerfile"
+LABEL org.opencontainers.image.source="https://github.com/nice-pink/skupper-devops/blob/0f715e75a828a91ca1f4e0d3d61c6a8ac78dcb3a/Dockerfile"
 
 WORKDIR /app
 
