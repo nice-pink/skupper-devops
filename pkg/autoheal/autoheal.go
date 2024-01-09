@@ -74,18 +74,17 @@ func triggerAlert(instance string, namespace string) {
 	incAlertsCounter(instance, namespace)
 }
 
-func restartService(instance string, namespace string, restartCount int) bool {
+func restartService(instance string, namespace string, restartCount int) (restarted bool, reset bool) {
 	if restartCount == MaxServiceRestarts {
 		triggerAlert(instance, namespace)
-		return false
+		return false, false
 	} else if restartCount > MaxServiceRestarts {
 		if restartCount > ServiceReset {
 			logger.Error(instance, "Reset restart counter.")
-			restartCount = 0
-			return false
+			return false, true
 		}
 		logger.Error(instance, "Restarts exeeded! Waiting for manual action.")
-		return false
+		return false, false
 	}
 
 	logger.Log("Restart", instance, "-", namespace)
@@ -93,10 +92,10 @@ func restartService(instance string, namespace string, restartCount int) bool {
 	if err != nil {
 		logger.Log(err)
 		incServiceMissingCounter(instance, namespace)
-		return false
+		return false, false
 	}
 
-	return true
+	return true, false
 }
 
 func increaseRestart(instance string) {
@@ -133,7 +132,10 @@ func WatchServiceUptimes(allowRestart bool) {
 
 			// restart
 			if allowRestart {
-				restartService(metric.Instance, metric.Namespace, Restarts[metric.Instance])
+				_, reset := restartService(metric.Instance, metric.Namespace, Restarts[metric.Instance])
+				if reset {
+					Restarts[metric.Instance] = 0
+				}
 			}
 		} else {
 			// reset restarts if online
